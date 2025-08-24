@@ -1,0 +1,81 @@
+version: "3.8"
+
+networks:
+  game_network:
+    driver: bridge
+
+services:
+  # Development database
+  db:
+    image: postgres:14
+    container_name: game_db
+    networks:
+      - game_network
+    environment:
+      - POSTGRES_DB=game_userver_db_1
+      - POSTGRES_USER=testsuite
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "15433:5432"
+    volumes:
+      - ./backend/postgresql/schemas:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
+
+  # Development backend service
+  backend:
+    image: ghcr.io/userver-framework/ubuntu-22.04-userver-pg-dev
+    container_name: game_backend
+    networks:
+      - game_network
+    environment:
+      - DB_CONNECTION=postgresql://testsuite:password@db:5432/game_userver_db_1
+      - CPU_LIMIT=1
+    volumes:
+      - ./backend:/home/user/game_userver:rw
+    working_dir: /home/user/game_userver
+    ports:
+      - "8080:8080"  # HTTP port
+      - "8081:8081"  # gRPC port
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    command: >
+      bash -c "
+        # Wait for database to be ready
+        until pg_isready -h db -p 5432 -U testsuite; do
+          echo 'Waiting for database...'
+          sleep 2
+        done
+        echo 'Database is ready!'
+        # Build the project
+        make build-debug
+        # Run the server
+        ./build-debug/game_userver --config ./configs/static_config.yaml
+      "
+    depends_on:
+      - db
+
+  # Telegram bot service
+  telegram_bot:
+    image: python:3.9
+    container_name: game_telegram_bot
+    networks:
+      - game_network
+    environment:
+      - BACKEND_GRPC_ADDRESS=backend:8081
+    volumes:
+      - ./frontend/telegram_bot:/app:rw
+    working_dir: /app
+    command: >
+      bash -c "
+        # Install dependencies
+        pip install -r requirements.txt
+        # Run the bot
+        python main.py
+      "
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

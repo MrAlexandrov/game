@@ -1,0 +1,6 @@
+[submodule "backend"]
+	path = backend
+	url = git@github.com:MrAlexandrov/game_userver.git
+[submodule "frontend/telegram_bot"]
+	path = frontend/telegram_bot
+	url = git@github.com:MrAlexandrov/game_bot.git
