@@ -45,19 +45,35 @@ Features:
 - Python 3.7+ (for Telegram bot development)
 - C++ compiler (for backend development)
 
-### Running the Full Stack
+### Running the Services
 
-To run both the backend and Telegram bot:
+#### Running Backend Services
+
+To run the backend services (database and backend):
 
 ```bash
-cd backend
-docker-compose -f docker-compose.dev.yml up
+./run.sh
 ```
 
 This will start:
 1. PostgreSQL database
 2. Backend service
-3. Telegram bot service
+
+#### Running Telegram Bot
+
+To run the Telegram bot separately:
+
+```bash
+cd frontend/telegram_bot
+./run.sh
+```
+
+Or directly with docker-compose:
+
+```bash
+cd frontend/telegram_bot
+docker-compose up
+```
 
 ### Backend Development
 

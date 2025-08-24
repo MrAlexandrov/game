@@ -20,20 +20,40 @@ game/
 - Python 3.7+ (for Telegram bot development)
 - C++ compiler (for backend development)
 
-## Running the Full Stack
+## Running the Services
 
-To run the entire game stack (database, backend, and Telegram bot):
+### Running Backend Services
+
+To run the backend services (database and backend):
 
 ```bash
 ./run.sh
 ```
 
-This will start all services using Docker Compose.
+This will start the database and backend services using Docker Compose.
 
-To stop the stack:
+To stop the backend services:
 
 ```bash
 ./stop.sh
+```
+
+### Running Telegram Bot
+
+To run the Telegram bot separately:
+
+```bash
+cd frontend/telegram_bot
+./run.sh
+```
+
+This will start the Telegram bot using its own Docker Compose file.
+
+To stop the Telegram bot:
+
+```bash
+cd frontend/telegram_bot
+docker-compose down
 ```
 
 ## Backend Development
@@ -143,3 +163,23 @@ For example:
 ```bash
 docker-compose logs backend
 docker-compose logs telegram_bot
+## Configuring the Telegram Bot
+
+To configure the Telegram bot, you need to set your bot token:
+
+1. Create a `.env` file in the `frontend/telegram_bot/` directory:
+   ```bash
+   cp frontend/telegram_bot/.env.example frontend/telegram_bot/.env
+   ```
+
+2. Edit the `.env` file and replace `your_telegram_bot_token_here` with your actual bot token:
+   ```bash
+   TELEGRAM_BOT_TOKEN=your_actual_bot_token_here
+   ```
+
+3. If you need to override the backend gRPC address, uncomment and modify the `BACKEND_GRPC_ADDRESS` line:
+   ```bash
+   # BACKEND_GRPC_ADDRESS=localhost:8081
+   ```
+
+Game settings like points per correct answer can be configured in `frontend/telegram_bot/config.yaml`.

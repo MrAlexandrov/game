@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Script to run the entire game stack
+# Script to run the backend services (database and backend)
 
-echo "Starting game stack..."
+echo "Starting backend services (database and backend)..."
 
 # Check if docker-compose.yml exists
 if [ ! -f "docker-compose.yml" ]; then
@@ -10,7 +10,7 @@ if [ ! -f "docker-compose.yml" ]; then
     exit 1
 fi
 
-# Start the entire stack
+# Start the backend services
 docker-compose up
 
-echo "Game stack stopped."
+echo "Backend services stopped."
