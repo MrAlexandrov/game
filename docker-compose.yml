@@ -56,5 +56,22 @@ services:
     depends_on:
       - db
 
+  # Telegram Bot
+  telegram_bot:
+    build:
+      context: ./frontend/telegram_bot
+      dockerfile: Dockerfile
+    container_name: game_telegram_bot
+    networks:
+      - game_network
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - API_BASE_URL=http://backend:8080
+    volumes:
+      - ./frontend/telegram_bot:/app:rw
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   postgres_data:
