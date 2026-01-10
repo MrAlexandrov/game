@@ -73,9 +73,8 @@ services:
     container_name: game_telegram_bot
     networks:
       - game_network
-    environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - API_BASE_URL=http://backend:8080
+    env_file:
+      - ./frontend/telegram_bot/.env
     volumes:
       - ./frontend/telegram_bot:/app:rw
     depends_on:
