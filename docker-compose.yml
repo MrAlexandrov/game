@@ -84,7 +84,8 @@ services:
     volumes:
       - ./frontend/telegram_bot:/app:rw
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
