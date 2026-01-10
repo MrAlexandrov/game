@@ -1,220 +1,207 @@
 # Game Project
 
-This is a unified game project with a backend service and multiple frontend clients.
+Проект игры-викторины с бэкендом на C++ (userver) и Telegram ботом на Python.
 
-## Project Structure
+## Структура проекта
 
-- `backend/` - The quiz game backend service built with userver framework (submodule)
-- `frontend/` - All frontend clients
-  - `telegram_bot/` - Telegram bot client for the quiz game (submodule)
+```
+game/
+├── backend/              # Бэкенд-сервис (submodule: game_userver)
+├── frontend/
+│   └── telegram_bot/     # Telegram бот (submodule: game_bot)
+├── docker-compose.yml    # Полный стек (postgres + backend + bot)
+├── docker-compose.backend.yml  # Только backend + postgres (для тестирования)
+└── Makefile             # Удобные команды для управления
+```
 
-## Backend
+## Быстрый старт
 
-The backend is a C++ service built with the [userver framework](https://github.com/userver-framework/userver) that provides:
+### 1. Клонирование с подмодулями
 
-- Quiz pack management (create, list, etc.)
-- Question and answer management
-- Game session management
-- Player management
-- HTTP REST API for frontend clients
-
-### Features
-
-- PostgreSQL database storage
-- HTTP REST API for communication with frontend clients
-- Docker support for easy deployment
-- Comprehensive test suite
-
-## Frontend
-
-### Telegram Bot
-
-A Telegram bot client that allows users to play quiz games directly in Telegram.
-
-Features:
-- Create and join quiz games
-- Play with multiple players
-- Real-time game progress
-- Score tracking
-
-## Quick Start
-
-### Prerequisites
-
-- Docker and Docker Compose
-- Telegram Bot Token (get it from [@BotFather](https://t.me/botfather))
-
-### Setup
-
-1. Clone the repository with submodules:
 ```bash
 git clone --recurse-submodules <repository-url>
 cd game
 ```
 
-If you already cloned without submodules:
+Если уже склонировали без подмодулей:
 ```bash
 git submodule update --init --recursive
 ```
 
-2. Create a `.env` file from the example:
+### 2. Настройка
+
+Создайте `.env` файл:
 ```bash
 cp .env.example .env
 ```
 
-3. Edit `.env` and add your Telegram bot token:
+Добавьте токен Telegram бота (получите у [@BotFather](https://t.me/botfather)):
 ```bash
-TELEGRAM_BOT_TOKEN=your_actual_bot_token_here
+TELEGRAM_BOT_TOKEN=your_bot_token_here
 ```
 
-### Running the Services
+### 3. Запуск
 
-Start all services (database, backend, and Telegram bot):
-
+**Запустить всё (рекомендуется):**
 ```bash
+make up
+# или
 docker compose up -d
 ```
 
-This will start:
-1. PostgreSQL database on port 5432
-2. Backend service on port 8080 (HTTP API) and 8081 (gRPC)
-3. Telegram bot (connected to your bot token)
-
-### Viewing Logs
-
-To view logs from all services:
+**Только бэкенд для тестирования:**
 ```bash
-docker compose logs -f
+make backend-only
+# или
+docker compose -f docker-compose.backend.yml up -d
 ```
 
-To view logs from a specific service:
+## Команды управления
+
 ```bash
-docker compose logs -f backend
-docker compose logs -f telegram_bot
-docker compose logs -f postgres
+make help           # Показать все доступные команды
+
+# Полный стек
+make up             # Запустить всё (postgres + backend + bot)
+make down           # Остановить всё
+make logs           # Показать логи
+make restart        # Перезапустить
+
+# Только бэкенд (для тестирования)
+make backend-only   # Запустить только backend + postgres
+make backend-down   # Остановить backend сервисы
+
+# Очистка
+make clean          # Остановить всё и удалить данные
 ```
 
-### Stopping the Services
+## Тестирование API
+
+После запуска бэкенда:
 
 ```bash
-docker compose down
+# Проверка работоспособности
+curl http://localhost:8080/ping
+
+# Получить список паков
+curl http://localhost:8080/packs
+
+# Создать пак
+curl -X POST http://localhost:8080/packs \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Тестовый квиз"}'
 ```
 
-To also remove volumes (database data):
+## API Endpoints
+
+### Управление контентом
+- `GET /packs` - Получить все паки
+- `POST /packs` - Создать пак
+- `GET /packs/{pack_id}` - Получить пак по ID
+- `POST /packs/{pack_id}/questions` - Создать вопрос
+- `GET /questions/{question_id}` - Получить вопрос
+- `POST /questions/{question_id}/variants` - Создать вариант ответа
+
+### Управление игрой
+- `POST /games` - Создать игровую сессию
+- `POST /games/{game_id}/players` - Добавить игрока
+- `POST /games/{game_id}/start` - Начать игру
+- `GET /games/{game_id}/state` - Получить текущее состояние
+- `POST /games/{game_id}/answers` - Отправить ответ
+- `GET /games/{game_id}/results` - Получить результаты
+
+## Использование Telegram бота
+
+1. Найдите вашего бота в Telegram
+2. Отправьте `/start`
+3. Используйте `/newgame` для создания игры
+4. Выберите пак вопросов
+5. Играйте!
+
+## Разработка
+
+### Изменения в бэкенде
+
 ```bash
-docker compose down -v
-```
-
-## Development
-
-### Backend Development
-
-The backend is located in the `backend/` directory (submodule). See [backend/README.md](backend/README.md) for detailed backend development instructions.
-
-To rebuild the backend after making changes:
-```bash
+cd backend
+# Внесите изменения
+cd ..
 docker compose up -d --build backend
 ```
 
-### Telegram Bot Development
+### Изменения в боте
 
-The Telegram bot is located in the `frontend/telegram_bot/` directory (submodule). See [frontend/telegram_bot/README.md](frontend/telegram_bot/README.md) for detailed bot development instructions.
-
-To rebuild the bot after making changes:
 ```bash
+cd frontend/telegram_bot
+# Внесите изменения
+cd ../..
 docker compose up -d --build telegram_bot
 ```
 
-### Testing the API
+## Порты
 
-You can test the backend API directly:
-
-```bash
-# Get all packs
-curl http://localhost:8080/packs
-
-# Create a game session (replace PACK_ID with actual pack ID)
-curl -X POST http://localhost:8080/games \
-  -H "Content-Type: application/json" \
-  -d '{"pack_id": "PACK_ID"}'
-
-# Add a player (replace GAME_ID with actual game ID)
-curl -X POST http://localhost:8080/games/GAME_ID/players \
-  -H "Content-Type: application/json" \
-  -d '{"player_name": "TestPlayer"}'
-```
-
-## Configuration
-
-### Backend
-
-The backend service can be configured through environment variables in `docker-compose.yml`:
-
-- `DB_CONNECTION` - PostgreSQL connection string
-- `CPU_LIMIT` - CPU limit for the service
-
-### Telegram Bot
-
-The Telegram bot requires the following environment variables:
-
-- `TELEGRAM_BOT_TOKEN` - Your Telegram bot token (required)
-- `API_BASE_URL` - Backend API URL (default: http://backend:8080)
+- `5432` - PostgreSQL
+- `8080` - Backend HTTP API
+- `8081` - Backend gRPC
 
 ## Troubleshooting
 
-### Backend won't start
+### Бэкенд не запускается
 
-1. Check if PostgreSQL is healthy:
 ```bash
-docker compose ps
-```
-
-2. Check backend logs:
-```bash
+# Проверьте логи
 docker compose logs backend
+
+# Проверьте статус postgres
+docker compose ps postgres
+
+# Перезапустите
+make restart
 ```
 
-### Telegram bot won't start
+### Бот не отвечает
 
-1. Verify your bot token is correct in `.env`
-2. Check bot logs:
 ```bash
+# Проверьте токен в .env
+cat .env
+
+# Проверьте логи бота
 docker compose logs telegram_bot
+
+# Проверьте доступность бэкенда
+docker compose exec telegram_bot curl http://backend:8080/ping
 ```
 
-3. Ensure backend is running:
+### Сброс базы данных
+
 ```bash
-curl http://localhost:8080/ping
+make clean
+make up
 ```
 
-### Database issues
+## Архитектура
 
-To reset the database:
-```bash
-docker compose down -v
-docker compose up -d
+```
+┌─────────────────┐
+│  Telegram Bot   │
+│   (Python)      │
+└────────┬────────┘
+         │ HTTP REST API
+         │ (port 8080)
+         ▼
+┌─────────────────┐
+│  Backend        │
+│  (C++/userver)  │
+└────────┬────────┘
+         │ PostgreSQL
+         │ (port 5432)
+         ▼
+┌─────────────────┐
+│  PostgreSQL     │
+│  (Database)     │
+└─────────────────┘
 ```
 
-## API Documentation
+## Лицензия
 
-### Content Management
-
-- `GET /packs` - Get all quiz packs
-- `POST /packs` - Create a new pack
-- `GET /packs/{pack_id}` - Get pack by ID
-- `POST /packs/{pack_id}/questions` - Create a question
-- `GET /questions/{question_id}` - Get question by ID
-- `POST /questions/{question_id}/variants` - Create answer variant
-
-### Game Management
-
-- `POST /games` - Create a game session
-- `POST /games/{game_id}/players` - Add a player
-- `POST /games/{game_id}/start` - Start the game
-- `GET /games/{game_id}/state` - Get current game state
-- `POST /games/{game_id}/answers` - Submit an answer
-- `GET /games/{game_id}/results` - Get game results
-
-## License
-
-This project is licensed under the Apache-2.0 License - see the [LICENSE](LICENSE) file for details.
+Apache-2.0 License

@@ -1,0 +1,71 @@
+version: "3.8"
+
+networks:
+  game_network:
+    driver: bridge
+
+services:
+  # PostgreSQL Database
+  postgres:
+    container_name: game_postgres
+    image: postgres:16-alpine
+    networks:
+      - game_network
+    environment:
+      - POSTGRES_DB=game_userver_db_1
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./backend/postgresql/schemas:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d game_userver_db_1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend Service (userver)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: game_backend
+    privileged: true
+    networks:
+      - game_network
+    environment:
+      - POSTGRES_DB=game_userver_db_1
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - DB_CONNECTION=postgresql://user:password@postgres:5432/game_userver_db_1
+      - PREFIX=${PREFIX:-~/.local}
+      - CPU_LIMIT=8
+      - CC=gcc-13
+      - CCACHE_DIR=/game_userver/.ccache
+      - CCACHE_HASHDIR
+      - CCACHE_NOHASHDIR
+      - CCACHE_PREFIX
+      - CCACHE_SIZE
+      - CMAKE_OPTS
+      - CORES_DIR=/cores
+      - CXX=g++-13
+      - MAKE_OPTS
+      - CMAKE_OPTIONS
+    volumes:
+      - ./backend:/game_userver:rw
+      - ${TC_CORES_DIR:-./.cores}:/cores:rw
+    ports:
+      - "8080:8080"  # HTTP API
+      - "8081:8081"  # gRPC (if needed)
+    working_dir: /game_userver
+    entrypoint:
+      - ./run_as_user.sh
+    command: ["bash", "-c", "make -- --in-docker-start-release"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
